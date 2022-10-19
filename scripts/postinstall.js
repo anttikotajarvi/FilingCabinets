@@ -1,3 +1,4 @@
 let fs = require('fs');
-console.log("dir"+__dirname)
-//fs.mkdirSync("../filingcabinets");
+let dir = __dirname+"../../filingcabinets";
+console.log(dir)
+fs.mkdirSync(dir);
