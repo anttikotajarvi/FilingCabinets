@@ -1,5 +1,5 @@
 {
-  "name": "filingcab",
+  "name": "filingcabinets",
   "version": "0.0.1",
   "description": "Filing cabinet desc*",
   "main": "index.js",
@@ -25,9 +25,9 @@
   "author": "Antti Kotajärvi",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/anttikotajarvi/FilingCab/issues"
+    "url": "https://github.com/anttikotajarvi/FilingCabinets/issues"
   },
-  "homepage": "https://github.com/anttikotajarvi/FilingCab#readme",
+  "homepage": "https://github.com/anttikotajarvi/FilingCabinets#readme",
   "devDependencies": {
     "typescript": "^4.8.4"
   }
