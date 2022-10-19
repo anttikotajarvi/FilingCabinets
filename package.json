@@ -1,0 +1,34 @@
+{
+  "name": "filingcab",
+  "version": "0.0.1",
+  "description": "Filing cabinet desc*",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anttikotajarvi/FilingCab.git"
+  },
+  "keywords": [
+    "index",
+    "based",
+    "filing",
+    "cabinet",
+    "to",
+    "replace",
+    "database"
+  ],
+  "author": "Antti Kotajärvi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anttikotajarvi/FilingCab/issues"
+  },
+  "homepage": "https://github.com/anttikotajarvi/FilingCab#readme",
+  "devDependencies": {
+    "typescript": "^4.8.4"
+  }
+}
