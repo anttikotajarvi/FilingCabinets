@@ -28,7 +28,7 @@ let DEFAULT_CONFIG_TEMPLATE = `
     configFilePath:     ${CONFIG_FILEPATH}
 
 }`;
-let DEFAULT_CONFIG = JSON.parse(CONFIG_TEMPLATE);
+let DEFAULT_CONFIG = JSON.parse(DEFAULT_CONFIG_TEMPLATE);
 if(!fs.existsSync(CONFIG_FILEPATH) || OVERWRITE);
     fs.writeFileSync(
         PROJECT_ROOT + "filcabsconfig.json", 
