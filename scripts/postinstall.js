@@ -7,7 +7,7 @@ let PROJECT_ROOT = path.normalize(__dirname+"/../../../");
 let CONFIG_FILEPATH = PROJECT_ROOT + "filcabsconfig.json";
 
 /*          Create sys default file        */
-let SYS_DEFAULT_FILEPATH = path.normalize(__dirname + "../defaults.json");
+let SYS_DEFAULT_FILEPATH = path.normalize(__dirname + "/../defaults.json");
 let SYS_DEFAULTS_TEMPLATE = `
 {
     "PROJECT_ROOT": "${PROJECT_ROOT}",
