@@ -32,7 +32,7 @@ if(!fs.existsSync(STORAGE_FOLDER_FILEPATH))
 /*          Create config file           */
 let DEFAULT_CONFIG_TEMPLATE = `
 {
-    "storageFolder": "${PROJECT_ROOT + ".FilingCabinets/"}",
+    "storageFolder": "${PROJECT_ROOT + '.FilingCabinets/'}",
     "_comment": "Where the actual data will be stored",
 
     "cabinetDefinitionIncludes": [
@@ -46,9 +46,9 @@ let DEFAULT_CONFIG_TEMPLATE = `
     "countingDefaultLimit":   20000,
     "_comment": "Max. amount of documents count() will count by default",
 
-    "_comment": "v Sys. defaults v",
-    "projectRoot":        "${PROJECT_ROOT}",
+
     "storageFolderPath":  "${STORAGE_FOLDER_FILEPATH}",
+    "_comment": "Where the actual data will be stored"
 }`;
 let DEFAULT_CONFIG = JSON.parse(DEFAULT_CONFIG_TEMPLATE);
 if(!fs.existsSync(CONFIG_FILEPATH) || OVERWRITE);
