@@ -40,30 +40,3 @@ Schema definitions
 */
 
 
-interface DocumentIdentifiers {
-	time: number, // UNIX time 
-	id: string    // hash?
-}; 
-
-let CreateLabel = (Parts: DocumentIdentifiers): string => {
-	// Unix time first to sort docs chronologically
-	return Parts.time + "_" + Parts.id;
-};
-
-interface FileSchema {
-	read: Function;
-	write: Function;
-}
-function CreateSchema(
-	read: () => boolean,
-	write: () => boolean
-): FileSchema {
-	return { 
-		read: read,
-		write: write
-	}
-}
-
-
-//FilingCabinetCore.defineFolder<F>
-

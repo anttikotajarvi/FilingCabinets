@@ -1,21 +1,12 @@
 "use strict";
 let fs = require('fs');
 
-let getConfig = (
-        path:string = __dirname + "/../../../filcabsconfig.json"
-    ):object => {
-    let config:object;
-
-    try{
-        config = JSON.parse(
-            fs.readFileSync(path)
-        );
-    } catch(e) {
-        throw "Error loading the filcabconfig.json file, check postinstall.js and FilingCabinets.ts"
-    }
-
-    return config;
-}
+let DEFAULTS = JSON.parse(
+    fs.readFileSync('../defaults.json')
+);
+let getConfig = ():object => JSON.parse(
+    fs.readFileSync(DEFAULTS.PROJECT_ROOT + "filcabsconfig.json")
+);
 let getCabinetDefinitionFiles = (lookIn: string[]):string[] => {
     let defs: string[] = [];
     lookIn.map(
@@ -54,22 +45,53 @@ type mutable<T> = {
 var CURRENT:STATE = INITIAL;
 
 module.exports = {
-    getState: ():STATE => { return CURRENT },
+    getState: ():STATE => { 
+        return CURRENT;
+    },
+
     initialize: (force:boolean = false):void => {
 
+        // Reinitialize only if 'force' is true
         if(CURRENT.INITIALIZED && !force)  return;
 
         let NEW:mutable<STATE> = CURRENT;
-        
-        NEW.CONFIG = getConfig();
-        NEW.DEFINITION_FILES =
-            getCabinetDefinitionFiles(
-                NEW.CONFIG.cabinetDefinitionIncludes
-            );
+    
+        // Load config from file
+        NEW.CONFIG = JSON.parse(
+            fs.readFileSync(DEFAULTS.CONFIG_FILEPATH)
+        );
 
+        // Source all cabinet definition files
+        let definition_files = getCabinetDefinitionFiles(
+            NEW.CONFIG.cabinetDefinitionIncludes
+        );
+        NEW.DEFINITION_FILES = definition_files;
+
+        // Source cabinet definitions into a single object
+        NEW.DEFINITIONS = (():object => {
+            var definitions = Object();
+            definition_files.map((file:string) => {
+                definitions = Object.assign(
+                    definitions, 
+                    JSON.parse(
+                        fs.fileReadSync(file)
+                    )
+                );
+            })
+            return definitions;
+        })();
+
+        // Create storage folders accordingly
+        
+
+
+        // Successful initialization
+        NEW.INITIALIZED = true;
 
         CURRENT = NEW;
-    }
+    },
+
+    getLoaded: ():string[] => Object.keys(CURRENT.DEFINITIONS)
 
 
 }
