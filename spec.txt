@@ -1,4 +1,3 @@
-/*
 Mutable structures
 TAKE/RESERVE - takes doc for proprietary use, doubles as DELETE
 RETURN - return to folder
@@ -33,10 +32,3 @@ Schema definitions
 	read function
 	write function 
 		- returns true or false
-	 
-	
-		
-
-*/
-
-
