@@ -27,7 +27,7 @@ test('Use case', () => {
   };
 
   let mainCabinet = FilingCabinets.use(main);
-  type userType = mainCabinet.folder('users').type();
+  type userType = mainCabinet.folder('users').type
   let newUser:userType = {
     name: "Antti",
     age: "21"
