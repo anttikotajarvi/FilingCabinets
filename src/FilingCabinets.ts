@@ -11,7 +11,7 @@ NOTES
 let fs = require('fs');
 
 import { GenericMutable } from './generics';
-import Ajv, { JTDSchemaType, Schema, ValidateFunction } from 'ajv/dist/jtd';
+import Ajv, { JTDDataType, JTDSchemaType, Schema, ValidateFunction } from 'ajv/dist/jtd';
 let ajv = new Ajv();
 
 /*  Types   */
@@ -33,9 +33,22 @@ export type CabinetDefinition = {
   };
 };
 
-type FilingCabinet = {
-  write: (x: unknown) => boolean;
-};
+
+type DocumentReference<BaseType> = {
+  readonly id: string,
+  readonly makeCopy: () => BaseType,
+  readonly update: (newData: BaseType) => void
+}
+
+type FolderReference<BaseType> = {
+  readonly name: string,
+  readonly file: (docData: BaseType) => DocumentReference<BaseType>
+}
+
+type CabinetReference = {
+  readonly name: string,
+  readonly folder: (folderName: string) => FolderReference<any>,
+}
 /************************************************************/
 
 /*  Module state    */
@@ -80,15 +93,46 @@ let sortDefinitions = (cabinet: CabinetDefinition): { folderKeys: string[]; bind
 
 /************************************************************/
 
+
+
+
 /* Control */
 export let FilingCabinets = {
-  use: (cabinet: CabinetDefinition): void => {
+  use: (cabinetDefinition: CabinetDefinition): void => {
     let NEW: GenericMutable<STATE> = CURRENT;
 
-    let keys = Object.keys(cabinet.definitions);
+    let keys = Object.keys(cabinetDefinition.definitions);
 
-    let { folderKeys, binderKeys } = sortDefinitions(cabinet);
+    let { folderKeys, binderKeys } = sortDefinitions(cabinetDefinition);
+    let validate = Object();
 
+    folderKeys.map((key:string) => {
+      validate[key] = ajv.compile(
+        (<FolderDefinition<any>>cabinetDefinition
+          .definitions[key])
+          .JTDSchema
+      )
+    })
+    let Cabinet: CabinetReference = {
+      name: cabinetDefinition.name,
+      folder: (folderName: string) => {
+      
+        if(!folderKeys.includes(folderName))
+          throw FCErrors.folder_not_found
+
+        let FolderDefinition = <FolderDefinition<any>>cabinetDefinition.definitions[folderName];
+
+        type BaseType = JTDDataType<typeof FolderDefinition.JTDSchema>
+        
+        return <FolderReference<any>>{
+          name: folderName,
+          file(docData: BaseType)
+        }
+      }
+    }
   },
-
 };
+
+let FCErrors = {
+  folder_not_found: Error('folder_not_found')
+}

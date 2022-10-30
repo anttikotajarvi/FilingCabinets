@@ -32,3 +32,27 @@ Schema definitions
 	read function
 	write function 
 		- returns true or false
+
+
+Functions returning functions is metaprogramming 
+refresher:
+>let f;
+{
+    let x = 10;
+    f = (n) => {
+        let l = x;
+        return n*l
+    }
+}
+
+>f(2)
+20
+
+>f
+(n) => {
+        let l = x;
+        return n*l
+    }
+
+>typeof x
+"undefined"
