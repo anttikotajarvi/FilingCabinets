@@ -48,10 +48,10 @@ export type FolderDefinition<X> = {
   )[];
 };
 export type CabinetDefinition = {
-  readonly name: string;
-  readonly definitions: {
-    [key: string]: FolderDefinition<any> | BinderDefinition;
-  };
+    readonly name: string;
+    readonly definitions: {
+        [key: string]: FolderDefinition<any> | BinderDefinition;
+    };
 };
 
 export type DocumentReference<BaseType> = {
@@ -217,6 +217,7 @@ function CreateCabinetReference(
     },
   };
 }
+
 /************************************************************/
 
 /*  Module state    */
@@ -245,6 +246,7 @@ const INITIAL: STATE = {
     validateFunctions: {},
   },
 };
+
 
 let CURRENT: STATE = INITIAL;
 /************************************************************/
@@ -278,6 +280,7 @@ const folderAndBinderKeys = (
   );
 
   return [folderKeys, binderKeys];
+
 };
 
 /************************************************************/
