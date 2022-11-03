@@ -103,10 +103,10 @@ export type FolderDefinition<X> = {
   )[];
 };
 export type CabinetDefinition = {
-  readonly name: string;
-  readonly definitions: {
-    [key: string]: FolderDefinition<any> | BinderDefinition;
-  };
+    readonly name: string;
+    readonly definitions: {
+        [key: string]: FolderDefinition<any> | BinderDefinition;
+    };
 };
 
 // References
@@ -271,6 +271,7 @@ function CreateCabinetReference(
     }
   };
 }
+
 /************************************************************/
 
 const isBinder = (
@@ -294,6 +295,7 @@ const folderAndBinderKeys = (
   );
 
   return [folderKeys, binderKeys];
+
 };
 
 /************************************************************/
@@ -363,3 +365,4 @@ export const FilingCabinets = {
     return CreateCabinetReference(cabinetDefinition);
   }
 };
+
