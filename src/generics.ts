@@ -37,10 +37,10 @@ export type DeepReadonlyObject<T> = {
 };
 
 export const memoize = <T = any>(
-  fn: (...args: any[]) => T,
+  fn: (...args: any[]) => T
 ) => {
-  const cache = Object();
-  return (...args: any[]): any => {
+  let cache = Object();
+  return (...args: any[]): T => {
     const argsHash = JSON.stringify(args);
     if (argsHash in cache) {
       return cache[argsHash];

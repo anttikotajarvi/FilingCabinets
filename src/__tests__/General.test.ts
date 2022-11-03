@@ -6,33 +6,59 @@ import {
   BinderReference,
   FolderReference,
   CabinetReference,
-  FilingCabinets,
+  FilingCabinets
 } from '../FilingCabinets';
-import Ajv, { JTDDataType } from 'ajv/dist/jtd';
+import Ajv, { JTDDataType, JTDSchemaType, ValidateFunction } from 'ajv/dist/jtd';
+import {
+  memoize
+} from '../generics'
+
+type User = {
+  name: string;
+  age: number;
+};
+const TestUser = {
+  name: "Test",
+  age: 18
+}
+
+
+test('Memoize ajv test', () => {
+
+  const ajv = new Ajv();
+ 
+  const memoizedAjvCompile = memoize<ValidateFunction<any>>((schema: JTDSchemaType<any>) => {
+    return ajv.compile(schema)
+  });
+  const JTDSchema = {
+    properties: {
+      name: { type: 'string' },
+      age: { type: 'uint8' }
+    }
+  }
+
+  const validate = memoizedAjvCompile(JTDSchema as JTDSchemaType<User>);
+
+  expect(validate(TestUser)).toBe(true)
+
+})
 
 test('Folder test', () => {
-  type User = {
-    name: string;
-    age: number;
-  };
 
   let main: CabinetDefinition = {
     name: 'main',
     definitions: {
       users: <FolderDefinition<User>>{
-        name: 'ddd',
         JTDSchema: {
           properties: {
             name: { type: 'string' },
-            age: { type: 'uint8' },
-          },
+            age: { type: 'uint8' }
+          }
         },
         predicates: [
-          (x) => x.age > 12,
-          (x) => x.name.includes(' '),
-        ],
-      },
-    },
+          (x) => x.age > 12        ]
+      }
+    }
   };
   // Load cabinet
   let mainCabinet: CabinetReference =
@@ -47,8 +73,9 @@ test('Folder test', () => {
   // Create new
   let newUser: userType = {
     name: 'Antti',
-    age: '21',
+    age: 21
   };
+
   // File (*verb) document, returns ref
   // Document is lost if reference not captured
   let userRef = users.file(newUser);
