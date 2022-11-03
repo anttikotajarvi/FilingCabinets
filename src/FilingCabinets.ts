@@ -7,33 +7,88 @@ NOTES
 !: critical
 
 */
-
 import fs = require('fs');
 import {
   GenericMutable,
   memoize,
-  DeepReadonly,
+  DeepReadonly
 } from './generics';
 import Ajv, {
   JTDDataType,
   JTDSchemaType,
   Schema,
-  ValidateFunction,
+  ValidateFunction
 } from 'ajv/dist/jtd';
-import { json } from 'stream/consumers';
 const ajv = new Ajv();
-const memoizedAjvCompile = memoize<ValidateFunction<any>>(
-  ajv.compile,
-);
+const memoizedAjvCompile = memoize<ValidateFunction<any>>((schema: JTDSchemaType<any>) => {
+  return ajv.compile(schema)
+});
+
+// External file system access
+const ext = {
+  exists: (filepath: string): boolean => {
+    return fs.existsSync(filepath);
+  },
+
+  writeDocData: <BaseType>(
+    filepath: string,
+    data: BaseType
+  ): void => {
+    try {
+      fs.writeFileSync(filepath, JSON.stringify(data));
+    } catch (error) {
+      SHITBED('doc_write_failed', error);
+    }
+    return;
+  },
+
+  readDocData: <BaseType>(
+    filepath: string
+  ): BaseType | null => {
+    try {
+      return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
+    } catch (error) {
+      SHITBED('doc_read_failed');
+    }
+    return null;
+  },
+
+  buildCabinetTree: (
+    cabinetDefinition: CabinetDefinition
+  ): void => {
+    const storageF = '.storage';
+    const cabinetF =
+      storageF + '/' + cabinetDefinition.name;
+
+    const _mkdirSync = (p:string) => {
+      if(!fs.existsSync(p)) fs.mkdirSync(p);
+    }
+
+    _mkdirSync(storageF);
+    _mkdirSync(cabinetF);
+
+    Object.keys(cabinetDefinition.definitions).map(
+      (key: string) => {
+        _mkdirSync(
+          cabinetF + "/" +
+          key
+        );
+      }
+    );
+
+    const [folderKeys, binderKeys] = folderAndBinderKeys(
+      cabinetDefinition
+    );
+  }
+};
 
 /*  Types   */
-
 type PredicateFunction<T> = (x: T) => boolean;
 type PredicateObject<T> = {
   function: PredicateFunction<T>;
   hotfix: (x: T) => T;
 };
-
+// Definitions
 export type BinderDefinition = {
   predicates: (
     | PredicateFunction<File>
@@ -54,6 +109,7 @@ export type CabinetDefinition = {
   };
 };
 
+// References
 export type DocumentReference<BaseType> = {
   readonly id: string;
   readonly exists: boolean;
@@ -70,24 +126,23 @@ export type FolderReference<BaseType> = {
   readonly name: string;
   readonly JTDSchema: JTDSchemaType<BaseType>;
   readonly file: (
-    docData: BaseType,
+    docData: BaseType
   ) => DocumentReference<BaseType>;
-  readonly doc: (
-    id: string,
-  ) => DocumentReference<BaseType> | null;
+  readonly doc: (id: string) => DocumentReference<BaseType>;
 };
 
 export type CabinetReference = {
   readonly name: string;
   readonly folder: (
-    folderName: string,
+    folderName: string
   ) => FolderReference<any>;
 };
 
+// Reference build functions
 function CreateDocumentReference<BaseType>(
   cabinetDefinition: CabinetDefinition,
   folderName: string,
-  documentID: string,
+  documentID: string
 ): DocumentReference<BaseType> {
   const folderDefinition = cabinetDefinition.definitions[
     folderName
@@ -95,44 +150,44 @@ function CreateDocumentReference<BaseType>(
   const filepath = DocPath(
     cabinetDefinition.name,
     folderName,
-    documentID,
+    documentID
   );
 
   return {
     id: documentID,
-    exists: fs.existsSync(filepath),
+    exists: ext.exists(filepath),
     makeCopy: (): BaseType | null => {
-      if (!fs.existsSync(filepath))
+      if (!ext.exists(filepath))
         SHITBED('doc_doesnt_exist');
 
-      return ReadDocData(filepath);
+      return ext.readDocData(filepath);
     },
     update: (newData: BaseType): void => {
-      if (!fs.existsSync(filepath))
-        SHITBED('doc_doesnt_exist');
+      if (!ext.exists(filepath))
+        SHITBED('doc_doesnt_exist', {filepath: filepath});
 
       const validate = memoizedAjvCompile(
-        folderDefinition.JTDSchema,
+        folderDefinition.JTDSchema
       );
-      if (!validate(newData)) SHITBED('invalid_doc_data');
+      if (!validate(newData)) SHITBED('invalid_doc_data', newData);
 
-      WriteDocData<BaseType>(
+      ext.writeDocData<BaseType>(
         DocPath(
           cabinetDefinition.name,
           folderName,
-          documentID,
+          documentID
         ),
-        newData,
+        newData
       );
 
       return;
-    },
+    }
   };
 }
 
 function CreateFolderReference<BaseType>(
   cabinetDefinition: CabinetDefinition,
-  folderName: string,
+  folderName: string
 ): FolderReference<BaseType> {
   const folderDefinition = cabinetDefinition.definitions[
     folderName
@@ -142,37 +197,36 @@ function CreateFolderReference<BaseType>(
     name: folderName,
     JTDSchema: folderDefinition.JTDSchema,
     file: (
-      newData: BaseType,
+      newData: BaseType
     ): DocumentReference<BaseType> => {
-      // Compile JTD
-      // ?NOTE: not sure if compilation can fail without a type error
-      const validate = ajv.compile<BaseType>(
-        folderDefinition.JTDSchema,
+  
+      const validate = memoizedAjvCompile(
+        folderDefinition.JTDSchema
       );
 
       // Validate data
-      if (!validate(newData)) SHITBED('invalid_doc_data');
+      if (!validate(newData)) SHITBED('invalid_doc_data', validate.errors);
 
       const finalData = CheckPredicates<BaseType>(
         folderDefinition.predicates,
-        newData,
+        newData
       );
 
       const reservedID = ValidID();
 
-      WriteDocData<BaseType>(
+      ext.writeDocData<BaseType>(
         DocPath(
           cabinetDefinition.name,
           folderName,
-          reservedID,
+          reservedID
         ),
-        finalData,
+        finalData
       );
 
       return CreateDocumentReference<BaseType>(
         cabinetDefinition,
         folderName,
-        reservedID,
+        reservedID
       );
     },
 
@@ -181,18 +235,18 @@ function CreateFolderReference<BaseType>(
       return CreateDocumentReference<BaseType>(
         cabinetDefinition,
         folderName,
-        id,
+        id
       );
-    },
+    }
   };
 }
 
 function CreateCabinetReference(
-  cabinetDefinition: CabinetDefinition,
+  cabinetDefinition: CabinetDefinition
 ): CabinetReference {
   const keys = Object.keys(cabinetDefinition.definitions);
   const [folderKeys, binderKeys] = folderAndBinderKeys(
-    cabinetDefinition,
+    cabinetDefinition
   );
 
   return {
@@ -212,53 +266,15 @@ function CreateCabinetReference(
 
       return CreateFolderReference<BaseType>(
         cabinetDefinition,
-        folderName,
+        folderName
       );
-    },
+    }
   };
 }
 /************************************************************/
 
-/*  Module state    */
-const DEFAULTS = JSON.parse(
-  fs.readFileSync('../defaults.json', 'utf-8'),
-);
-
-type STATE = {
-  readonly INITIALIZED: boolean;
-  readonly CONFIG: object;
-  readonly CABINETS: {
-    [key: string]: CabinetDefinition;
-  };
-  readonly CACHED: {
-    validateFunctions: {
-      [key: string]: ValidateFunction<any>;
-    };
-  };
-};
-
-const INITIAL: STATE = {
-  INITIALIZED: false,
-  CONFIG: Object(),
-  CABINETS: Object(),
-  CACHED: {
-    validateFunctions: {},
-  },
-};
-
-let CURRENT: STATE = INITIAL;
-/************************************************************/
-
-/*  Local functions */
-const getConfig = (): object =>
-  JSON.parse(
-    fs.readFileSync(
-      DEFAULTS.PROJECT_ROOT + 'filcabsconfig.json',
-      'utf-8',
-    ),
-  );
 const isBinder = (
-  definition: FolderDefinition<any> | BinderDefinition,
+  definition: FolderDefinition<any> | BinderDefinition
 ) =>
   (definition as FolderDefinition<any>).JTDSchema ===
   undefined;
@@ -266,7 +282,7 @@ const isBinder = (
 // Sort folder and binder definition keys
 // ~NOTE: kind of a stupid function
 const folderAndBinderKeys = (
-  cabinet: CabinetDefinition,
+  cabinet: CabinetDefinition
 ): [string[], string[]] => {
   const keys = Object.keys(cabinet.definitions);
   const folderKeys = Array();
@@ -274,7 +290,7 @@ const folderAndBinderKeys = (
   keys.map((key: string) =>
     isBinder(cabinet.definitions[key])
       ? binderKeys.push(key)
-      : folderKeys.push(key),
+      : folderKeys.push(key)
   );
 
   return [folderKeys, binderKeys];
@@ -283,50 +299,33 @@ const folderAndBinderKeys = (
 /************************************************************/
 function SHITBED(
   error_code: string,
-  dump_data: any = {},
+  dump_data: any = {}
 ): void {
   throw Error(
     'BED = SHAT \n' +
-      error_code +
-      '\n DATA: \n' +
-      JSON.stringify(dump_data, undefined, 2),
+    error_code +
+    '\nDATA: ' +
+    JSON.stringify(dump_data, undefined, 2)
   );
 }
 
 function DocPath(
   cabinetName: string,
   containerName: string,
-  documentID: string,
+  documentID: string
 ) {
-  return `../.storage/${cabinetName}/${containerName}/${documentID}`;
+  return `.storage/${cabinetName}/${containerName}/${documentID}`;
 }
 
-function WriteDocData<BaseType>(
-  filepath: string,
-  data: BaseType,
-): void {
-  try {
-    fs.writeFileSync(filepath, JSON.stringify(data));
-  } catch (error) {
-    SHITBED('doc_write_failed');
-  }
-}
-function ReadDocData<BaseType>(
-  filepath: string,
-): BaseType | null {
-  try {
-    return JSON.parse(fs.readFileSync(filepath, 'utf-8'));
-  } catch (error) {
-    SHITBED('doc_read_failed');
-  }
-  return null;
+function ValidID(): string {
+  return Date.now().toString();
 }
 
 function CheckPredicates<T>(
   predicates:
     | (PredicateFunction<T> | PredicateObject<T>)[]
     | undefined,
-  data: T,
+  data: T
 ): T {
   if (typeof predicates === 'undefined') return data;
 
@@ -334,34 +333,33 @@ function CheckPredicates<T>(
   predicates.map(
     (
       P: PredicateFunction<T> | PredicateObject<T>,
-      i: number,
+      i: number
     ) => {
       if (typeof P === 'function') {
         if (!P(tempData))
-          SHITBED('predcate_false', { predicate: P });
+          SHITBED('predicate_false', { predicate: P });
       } else {
         if (!P.function(tempData)) {
           tempData = P.hotfix(tempData);
           if (!P.function(tempData))
             SHITBED('predicate_false_after_hotfix', {
-              predicate: P,
+              predicate: P
             });
         }
       }
-    },
+    }
   );
 
   return tempData;
-}
-function ValidID(): string {
-  return Date.now().toString();
 }
 
 /* Control */
 export const FilingCabinets = {
   use: (
-    cabinetDefinition: CabinetDefinition,
+    cabinetDefinition: CabinetDefinition
   ): CabinetReference => {
+    ext.buildCabinetTree(cabinetDefinition);
+
     return CreateCabinetReference(cabinetDefinition);
-  },
+  }
 };
