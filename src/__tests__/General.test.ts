@@ -12,6 +12,7 @@ import Ajv, { JTDDataType, JTDSchemaType, ValidateFunction } from 'ajv/dist/jtd'
 import {
   memoize
 } from '../generics'
+import { fstat, mkdirSync } from 'fs';
 
 type User = {
   name: string;
@@ -42,10 +43,11 @@ test('Memoize ajv test', () => {
   expect(validate(TestUser)).toBe(true)
 
 })
-
-test('Folder test', () => {
-
-  let main: CabinetDefinition = {
+let main: CabinetDefinition;
+let mainCabinet: CabinetReference;
+test('Define cabinet', () => {
+  // Define cabinet
+  main = {
     name: 'main',
     definitions: {
       users: <FolderDefinition<User>>{
@@ -57,12 +59,19 @@ test('Folder test', () => {
         },
         predicates: [
           (x) => x.age > 12        ]
+      },
+      bucket: <BinderDefinition> {
+    
       }
     }
   };
+
   // Load cabinet
-  let mainCabinet: CabinetReference =
-    FilingCabinets.use(main);
+  mainCabinet = FilingCabinets.use(main);
+
+})
+
+test('Folder test', () => {
 
   // Specify folder (/binder)
   let users = mainCabinet.folder('users');
@@ -95,3 +104,11 @@ test('Folder test', () => {
 
   expect(retrievedUserRef.makeCopy().name).toBe('Aimo');
 });
+
+test('Binder test', () => {
+
+  let b = new Blob(["hw"], {type:"text/plain"})
+  
+  
+
+})

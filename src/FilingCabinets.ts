@@ -24,6 +24,14 @@ const memoizedAjvCompile = memoize<ValidateFunction<any>>((schema: JTDSchemaType
   return ajv.compile(schema)
 });
 
+const CONFIG  = require('rc')("filingcabinets", {
+
+  suppressPredicateErrors: false,
+  relativeStoragePath: ".storage",
+
+  port: 2468
+});
+
 // External file system access
 const ext = {
   exists: (filepath: string): boolean => {
@@ -56,7 +64,7 @@ const ext = {
   buildCabinetTree: (
     cabinetDefinition: CabinetDefinition
   ): void => {
-    const storageF = '.storage';
+    const storageF = CONFIG.relativeStoragePath;
     const cabinetF =
       storageF + '/' + cabinetDefinition.name;
 
@@ -75,34 +83,40 @@ const ext = {
         );
       }
     );
-
-    const [folderKeys, binderKeys] = folderAndBinderKeys(
-      cabinetDefinition
-    );
   }
 };
 
-/*  Types   */
 type PredicateFunction<T> = (x: T) => boolean;
 type PredicateObject<T> = {
   function: PredicateFunction<T>;
   hotfix: (x: T) => T;
 };
 // Definitions
-export type BinderDefinition = {
-  predicates: (
-    | PredicateFunction<File>
-    | PredicateObject<File>
-  )[];
-};
-export type FolderDefinition<X> = {
-  JTDSchema: JTDSchemaType<X>;
+interface ContainerDefinition<X> {
+  description?: "string";
   predicates?: (
     | PredicateFunction<X>
     | PredicateObject<X>
   )[];
+}
+let F = new File(["hello World!"], "hello_world.txt", {type:"text/plain"});
+
+fs.writeFileSync("s","ss", {
+  
+})
+let express = require("express");
+let app = express();
+app.post("/s", (req:any, res:any) => {
+
+})
+export interface BinderDefinition extends ContainerDefinition<File> {
+  // eh
 };
-export type CabinetDefinition = {
+
+export interface FolderDefinition<X> extends ContainerDefinition<X>{
+  JTDSchema: JTDSchemaType<X>;
+};
+export interface CabinetDefinition {
   readonly name: string;
   readonly definitions: {
     [key: string]: FolderDefinition<any> | BinderDefinition;
@@ -116,12 +130,6 @@ export type DocumentReference<BaseType> = {
   readonly makeCopy: () => BaseType | null;
   readonly update: (newData: BaseType) => void;
 };
-
-export type BinderReference = {
-  readonly name: string;
-  readonly file: (docData: File) => void;
-};
-
 export type FolderReference<BaseType> = {
   readonly name: string;
   readonly JTDSchema: JTDSchemaType<BaseType>;
@@ -129,6 +137,15 @@ export type FolderReference<BaseType> = {
     docData: BaseType
   ) => DocumentReference<BaseType>;
   readonly doc: (id: string) => DocumentReference<BaseType>;
+};
+
+export type BinderDocumentReference = {
+  readonly filename: string,
+  readonly delete: () => boolean
+}
+export type BinderReference = {
+  readonly name: string;
+  readonly file: (docData: File) => BinderDocumentReference;
 };
 
 export type CabinetReference = {
@@ -314,7 +331,7 @@ function DocPath(
   containerName: string,
   documentID: string
 ) {
-  return `.storage/${cabinetName}/${containerName}/${documentID}`;
+  return `${CONFIG.relativeStoragePath}/${cabinetName}/${containerName}/${documentID}`;
 }
 
 function ValidID(): string {
@@ -326,7 +343,7 @@ function CheckPredicates<T>(
     | (PredicateFunction<T> | PredicateObject<T>)[]
     | undefined,
   data: T
-): T {
+)  {
   if (typeof predicates === 'undefined') return data;
 
   let tempData = data;
