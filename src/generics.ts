@@ -1,4 +1,4 @@
-import path = require("path");
+import path = require('path');
 
 export type GenericMutable<T> = {
   -readonly [P in keyof T]: T[any];

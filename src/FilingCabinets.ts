@@ -20,14 +20,15 @@ import Ajv, {
   ValidateFunction
 } from 'ajv/dist/jtd';
 const ajv = new Ajv();
-const memoizedAjvCompile = memoize<ValidateFunction<any>>((schema: JTDSchemaType<any>) => {
-  return ajv.compile(schema)
-});
+const memoizedAjvCompile = memoize<ValidateFunction<any>>(
+  (schema: JTDSchemaType<any>) => {
+    return ajv.compile(schema);
+  }
+);
 
-const CONFIG  = require('rc')("filingcabinets", {
-
+const CONFIG = require('rc')('filingcabinets', {
   suppressPredicateErrors: false,
-  relativeStoragePath: ".storage",
+  relativeStoragePath: '.storage',
 
   port: 2468
 });
@@ -68,19 +69,16 @@ const ext = {
     const cabinetF =
       storageF + '/' + cabinetDefinition.name;
 
-    const _mkdirSync = (p:string) => {
-      if(!fs.existsSync(p)) fs.mkdirSync(p);
-    }
+    const _mkdirSync = (p: string) => {
+      if (!fs.existsSync(p)) fs.mkdirSync(p);
+    };
 
     _mkdirSync(storageF);
     _mkdirSync(cabinetF);
 
     Object.keys(cabinetDefinition.definitions).map(
       (key: string) => {
-        _mkdirSync(
-          cabinetF + "/" +
-          key
-        );
+        _mkdirSync(cabinetF + '/' + key);
       }
     );
   }
@@ -93,35 +91,35 @@ type PredicateObject<T> = {
 };
 // Definitions
 interface ContainerDefinition<X> {
-  description?: "string";
+  description?: 'string';
   predicates?: (
     | PredicateFunction<X>
     | PredicateObject<X>
   )[];
 }
-let F = new File(["hello World!"], "hello_world.txt", {type:"text/plain"});
+let F = new File(['hello World!'], 'hello_world.txt', {
+  type: 'text/plain'
+});
 
-fs.writeFileSync("s","ss", {
-  
-})
-let express = require("express");
+fs.writeFileSync('s', 'ss', {});
+let express = require('express');
 let app = express();
-app.post("/s", (req:any, res:any) => {
-
-})
-export interface BinderDefinition extends ContainerDefinition<File> {
+app.post('/s', (req: any, res: any) => {});
+export interface BinderDefinition
+  extends ContainerDefinition<File> {
   // eh
-};
+}
 
-export interface FolderDefinition<X> extends ContainerDefinition<X>{
+export interface FolderDefinition<X>
+  extends ContainerDefinition<X> {
   JTDSchema: JTDSchemaType<X>;
-};
+}
 export interface CabinetDefinition {
   readonly name: string;
   readonly definitions: {
     [key: string]: FolderDefinition<any> | BinderDefinition;
   };
-};
+}
 
 // References
 export type DocumentReference<BaseType> = {
@@ -140,9 +138,9 @@ export type FolderReference<BaseType> = {
 };
 
 export type BinderDocumentReference = {
-  readonly filename: string,
-  readonly delete: () => boolean
-}
+  readonly filename: string;
+  readonly delete: () => boolean;
+};
 export type BinderReference = {
   readonly name: string;
   readonly file: (docData: File) => BinderDocumentReference;
@@ -181,12 +179,13 @@ function CreateDocumentReference<BaseType>(
     },
     update: (newData: BaseType): void => {
       if (!ext.exists(filepath))
-        SHITBED('doc_doesnt_exist', {filepath: filepath});
+        SHITBED('doc_doesnt_exist', { filepath });
 
       const validate = memoizedAjvCompile(
         folderDefinition.JTDSchema
       );
-      if (!validate(newData)) SHITBED('invalid_doc_data', newData);
+      if (!validate(newData))
+        SHITBED('invalid_doc_data', newData);
 
       ext.writeDocData<BaseType>(
         DocPath(
@@ -216,13 +215,13 @@ function CreateFolderReference<BaseType>(
     file: (
       newData: BaseType
     ): DocumentReference<BaseType> => {
-  
       const validate = memoizedAjvCompile(
         folderDefinition.JTDSchema
       );
 
       // Validate data
-      if (!validate(newData)) SHITBED('invalid_doc_data', validate.errors);
+      if (!validate(newData))
+        SHITBED('invalid_doc_data', validate.errors);
 
       const finalData = CheckPredicates<BaseType>(
         folderDefinition.predicates,
@@ -315,14 +314,14 @@ const folderAndBinderKeys = (
 
 /************************************************************/
 function SHITBED(
-  error_code: string,
-  dump_data: any = {}
+  errorCode: string,
+  dumpData: any = {}
 ): void {
   throw Error(
     'BED = SHAT \n' +
-    error_code +
-    '\nDATA: ' +
-    JSON.stringify(dump_data, undefined, 2)
+      errorCode +
+      '\nDATA: ' +
+      JSON.stringify(dumpData, undefined, 2)
   );
 }
 
@@ -343,7 +342,7 @@ function CheckPredicates<T>(
     | (PredicateFunction<T> | PredicateObject<T>)[]
     | undefined,
   data: T
-)  {
+) {
   if (typeof predicates === 'undefined') return data;
 
   let tempData = data;

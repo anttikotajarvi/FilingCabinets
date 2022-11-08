@@ -8,10 +8,12 @@ import {
   CabinetReference,
   FilingCabinets
 } from '../FilingCabinets';
-import Ajv, { JTDDataType, JTDSchemaType, ValidateFunction } from 'ajv/dist/jtd';
-import {
-  memoize
-} from '../generics'
+import Ajv, {
+  JTDDataType,
+  JTDSchemaType,
+  ValidateFunction
+} from 'ajv/dist/jtd';
+import { memoize } from '../generics';
 import { fstat, mkdirSync } from 'fs';
 
 type User = {
@@ -19,30 +21,31 @@ type User = {
   age: number;
 };
 const TestUser = {
-  name: "Test",
+  name: 'Test',
   age: 18
-}
-
+};
 
 test('Memoize ajv test', () => {
-
   const ajv = new Ajv();
- 
-  const memoizedAjvCompile = memoize<ValidateFunction<any>>((schema: JTDSchemaType<any>) => {
-    return ajv.compile(schema)
-  });
+
+  const memoizedAjvCompile = memoize<ValidateFunction<any>>(
+    (schema: JTDSchemaType<any>) => {
+      return ajv.compile(schema);
+    }
+  );
   const JTDSchema = {
     properties: {
       name: { type: 'string' },
       age: { type: 'uint8' }
     }
-  }
+  };
 
-  const validate = memoizedAjvCompile(JTDSchema as JTDSchemaType<User>);
+  const validate = memoizedAjvCompile(
+    JTDSchema as JTDSchemaType<User>
+  );
 
-  expect(validate(TestUser)).toBe(true)
-
-})
+  expect(validate(TestUser)).toBe(true);
+});
 let main: CabinetDefinition;
 let mainCabinet: CabinetReference;
 test('Define cabinet', () => {
@@ -57,22 +60,17 @@ test('Define cabinet', () => {
             age: { type: 'uint8' }
           }
         },
-        predicates: [
-          (x) => x.age > 12        ]
+        predicates: [(x) => x.age > 12]
       },
-      bucket: <BinderDefinition> {
-    
-      }
+      bucket: <BinderDefinition>{}
     }
   };
 
   // Load cabinet
   mainCabinet = FilingCabinets.use(main);
-
-})
+});
 
 test('Folder test', () => {
-
   // Specify folder (/binder)
   let users = mainCabinet.folder('users');
 
@@ -106,9 +104,5 @@ test('Folder test', () => {
 });
 
 test('Binder test', () => {
-
-  let b = new Blob(["hw"], {type:"text/plain"})
-  
-  
-
-})
+  let b = new Blob(['hw'], { type: 'text/plain' });
+});
