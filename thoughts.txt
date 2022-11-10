@@ -1,0 +1,13 @@
+Cabinet 
+    Folder 
+        file ( document )
+    
+    Binder
+        save ( file ) 
+
+
+type File = {
+    filename: "yeah.jpg",
+    buffer: base64,
+    encoding: 
+}
