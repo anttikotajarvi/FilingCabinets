@@ -6,46 +6,53 @@ import {
   BinderReference,
   FolderReference,
   CabinetReference,
-  FilingCabinets
-} from '../FilingCabinets';
-import Ajv, { JTDDataType, JTDSchemaType, ValidateFunction } from 'ajv/dist/jtd';
-import {
-  memoize
-} from '../generics'
+} from '../src/def';
+import { FilingCabinets } from "../src/core"
+import Ajv, {
+  JTDDataType,
+  JTDSchemaType,
+  ValidateFunction
+} from 'ajv/dist/jtd';
+import { memoize } from '../src/util';
+import { fstat, mkdirSync } from 'fs';
+import { stringify } from 'querystring';
 
 type User = {
   name: string;
   age: number;
 };
 const TestUser = {
-  name: "Test",
+  name: 'Test',
   age: 18
-}
-
+};
 
 test('Memoize ajv test', () => {
-
   const ajv = new Ajv();
- 
-  const memoizedAjvCompile = memoize<ValidateFunction<any>>((schema: JTDSchemaType<any>) => {
-    return ajv.compile(schema)
-  });
+
+  const memoizedAjvCompile = memoize<ValidateFunction<any>>(
+    (schema: JTDSchemaType<any>) => {
+      return ajv.compile(schema);
+    }
+  );
   const JTDSchema = {
     properties: {
       name: { type: 'string' },
       age: { type: 'uint8' }
     }
-  }
+  };
 
-  const validate = memoizedAjvCompile(JTDSchema as JTDSchemaType<User>);
+  const validate = memoizedAjvCompile(
+    JTDSchema as JTDSchemaType<User>
+  );
 
-  expect(validate(TestUser)).toBe(true)
+  expect(validate(TestUser)).toBe(true);
+});
 
-})
-
-test('Folder test', () => {
-
-  let main: CabinetDefinition = {
+let main: CabinetDefinition;
+let mainCabinet: CabinetReference;
+test('Define cabinet', () => {
+  // Define cabinet
+  main = {
     name: 'main',
     definitions: {
       users: <FolderDefinition<User>>{
@@ -55,15 +62,17 @@ test('Folder test', () => {
             age: { type: 'uint8' }
           }
         },
-        predicates: [
-          (x) => x.age > 12        ]
-      }
+        predicates: [(x) => x.age > 12]
+      },
+      bucket: <BinderDefinition>{}
     }
   };
-  // Load cabinet
-  let mainCabinet: CabinetReference =
-    FilingCabinets.use(main);
 
+  // Load cabinet
+  mainCabinet = FilingCabinets.use(main);
+});
+
+test('Folder test', () => {
   // Specify folder (/binder)
   let users = mainCabinet.folder('users');
 
@@ -79,7 +88,7 @@ test('Folder test', () => {
   // File (*verb) document, returns ref
   // Document is lost if reference not captured
   let userRef = users.file(newUser);
-  console.log('User saved ', newUser, userRef);
+  //console.log('User saved ', newUser, userRef);
 
   // Retrieve by id
   let retrievedUserRef = users.doc(userRef.id);
@@ -94,4 +103,26 @@ test('Folder test', () => {
   retrievedUserRef.update(retrievedUserData);
 
   expect(retrievedUserRef.makeCopy().name).toBe('Aimo');
+});
+
+test('Binder test', () => {
+  const fs = require('fs');
+
+  // Create buffer for image 
+  const imgPath = "/home/antti/repos/http/bobby.jpg"
+  const B = fs.readFileSync(imgPath) as Buffer;
+
+  // Save image
+  const bucket = mainCabinet.binder('bucket');
+  const bobbyRef = bucket.file({filename:"out.jpg",buffer:B})
+  //console.log({bobbyRef})
+
+  // Retrieve image
+  const retrieved = bobbyRef.makeCopy();
+
+  expect(retrieved.buffer.toString()).toBe(B.toString());
+
+  // Delete image
+  bobbyRef.delete();
+  
 });
