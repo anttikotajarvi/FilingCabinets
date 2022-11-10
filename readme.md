@@ -1,4 +1,4 @@
-todo:
-create todo list \n
-configre npm package \n
-publish npm package \n
+todo:  
+create todo list  
+configre npm package  
+publish npm package  
