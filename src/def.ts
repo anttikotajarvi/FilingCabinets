@@ -23,6 +23,7 @@ export type CabinetReference = {
     folderName: string
   ) => FolderReference<any>;
   readonly binder: (binderName: string) => BinderReference;
+  readonly delete: () => void;
 };
 
 // Folder

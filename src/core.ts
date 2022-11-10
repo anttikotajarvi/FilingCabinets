@@ -12,7 +12,7 @@ import {
   PredicateFunction,
   PredicateObject
 } from './def';
-import { memoize } from './util';
+import { memoize, anyToString } from './util';
 import { SHITBED } from './err';
 import Ajv, {
   JTDDataType,
@@ -20,6 +20,8 @@ import Ajv, {
   Schema,
   ValidateFunction
 } from 'ajv/dist/jtd';
+import path = require('path');
+
 const ajv = new Ajv();
 const memoizedAjvCompile = memoize<ValidateFunction<any>>(
   (schema: JTDSchemaType<any>) => {
@@ -29,17 +31,73 @@ const memoizedAjvCompile = memoize<ValidateFunction<any>>(
 
 const CONFIG = require('rc')('filingcabinets', {
   suppressPredicateErrors: false,
-  relativeStoragePath: '.storage',
+  relativeStoragePath: '../.storage',
 
   port: 2468
 });
-const path = require('path');
+// Needs to be declared and true for writing to .internal
+const INTERNAL = true;
 
 // Shorthand for path joining
 const StoragePath = (...x: string[]) =>
   path.join(CONFIG.relativeStoragePath, ...x);
 
 const ext = require('./ext');
+/* Control */
+export const FilingCabinets = {
+  use: (
+    cabinetDefinition: CabinetDefinition
+  ): CabinetReference => {
+    // Add .internal binder
+    const _cabinetDefinition = cabinetDefinition;
+    _cabinetDefinition.definitions['.internal'] = {
+      predicates: [(x: BinderFile) => !!INTERNAL]
+    } as BinderDefinition;
+
+    const cabinetLock = anyToString(_cabinetDefinition);
+    const cabinetReference = CreateCabinetReference(
+      _cabinetDefinition
+    );
+    const internalBinder =
+      cabinetReference.binder('.internal');
+    // Check if cabinet exists already
+    if (ext.exists(StoragePath(cabinetDefinition.name))) {
+      // Check if a cabinet is already defined under the same name
+      const currentCabinetLock = internalBinder
+        .doc('cabinet-lock')
+        .makeCopy()
+        .buffer.toString();
+      if (currentCabinetLock !== cabinetLock)
+        SHITBED('conflicting_definition', {
+          _cabinetDefinition,
+          existingLock: currentCabinetLock,
+          newLock: cabinetLock
+        });
+    } else {
+      // Build Cabinet tree
+      const storageF = CONFIG.relativeStoragePath;
+      const cabinetF = path.join(
+        storageF,
+        _cabinetDefinition.name
+      );
+      ext.mkdir(storageF);
+      ext.mkdir(cabinetF);
+      Object.keys(_cabinetDefinition.definitions).map(
+        (key: string) => {
+          ext.mkdir(path.join(cabinetF, key));
+        }
+      );
+
+      // Save internal file a doc to keep track of cabinets definition
+      cabinetReference.binder('.internal').file({
+        filename: 'cabinet-lock',
+        buffer: Buffer.from(cabinetLock)
+      });
+    }
+
+    return cabinetReference;
+  }
+};
 
 // Reference build functions
 function CreateDocumentReference<BaseType>(
@@ -50,7 +108,7 @@ function CreateDocumentReference<BaseType>(
   const folderDefinition = cabinetDefinition.definitions[
     folderName
   ] as FolderDefinition<BaseType>;
-  const filepath = path.join(
+  const filepath = StoragePath(
     cabinetDefinition.name,
     folderName,
     documentID
@@ -61,7 +119,7 @@ function CreateDocumentReference<BaseType>(
     exists: ext.exists(filepath),
     makeCopy: (): BaseType | null => {
       if (!ext.exists(filepath))
-        SHITBED('doc_doesnt_exist', {filepath});
+        SHITBED('doc_doesnt_exist', { filepath });
 
       return ext.readDoc(filepath);
     },
@@ -250,11 +308,15 @@ function CreateCabinetReference(
         cabinetDefinition,
         binderName
       );
-    }
+    },
+    delete: () =>
+      ext.rm(StoragePath(cabinetDefinition.name))
   };
 }
-
-function initCabinet(cabinetDefinition: CabinetDefinition) {
+// Utility
+function buildCabinetTree(
+  cabinetDefinition: CabinetDefinition
+) {
   const storageF = CONFIG.relativeStoragePath;
   const cabinetF = path.join(
     storageF,
@@ -270,17 +332,6 @@ function initCabinet(cabinetDefinition: CabinetDefinition) {
     }
   );
 }
-
-/* Control */
-export const FilingCabinets = {
-  use: (
-    cabinetDefinition: CabinetDefinition
-  ): CabinetReference => {
-    initCabinet(cabinetDefinition);
-
-    return CreateCabinetReference(cabinetDefinition);
-  }
-};
 
 const isBinder = (
   definition: FolderDefinition<any> | BinderDefinition

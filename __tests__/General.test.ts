@@ -13,9 +13,10 @@ import Ajv, {
   JTDSchemaType,
   ValidateFunction
 } from 'ajv/dist/jtd';
-import { memoize } from '../src/util';
+import { GenericMutable, memoize } from '../src/util';
 import { fstat, mkdirSync } from 'fs';
 import { stringify } from 'querystring';
+import { json } from 'stream/consumers';
 
 type User = {
   name: string;
@@ -126,3 +127,15 @@ test('Binder test', () => {
   bobbyRef.delete();
   
 });
+test('Use cabinet again', () => {
+  const cabinetReference = FilingCabinets.use(main)
+
+  const newMain = main as GenericMutable<CabinetDefinition>;
+  newMain.definitions = [
+    {
+      
+    } as BinderDefinition
+  ]
+ 
+  expect(() => FilingCabinets.use(newMain)).toThrowError();
+})
