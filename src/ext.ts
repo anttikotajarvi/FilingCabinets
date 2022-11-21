@@ -16,6 +16,10 @@ module.exports = {
     fs.rmSync(filepath);
   },
 
+  readdir: (dir: string):string[] => {
+    return fs.readdirSync(dir)
+  },
+
   writeDoc: (filepath: string, data: any): void => {
     try {
       fs.writeFileSync(filepath, JSON.stringify(data));

@@ -79,3 +79,31 @@ export function anyToString(
   }
   return JSON.stringify(valueToConvert);
 }
+
+
+export function findClosest(set:unknown[], num:number) {
+  const _set = (i:number) => Number(set[i])
+
+  if(num < _set(0)) return 0;
+  if(num > _set(set.length - 1)) return set.length -1 
+
+  let step = set.length / 2;
+  const f = (ptr:number):number => {
+      const down = Math.floor(ptr)
+      const up = down + 1
+      step /= 2;
+ 
+      if(num < _set(down)) 
+          return f(ptr-step)
+      
+      if(num > _set(up)) 
+          return f(ptr+step);
+      
+      if(num - _set(down) < _set(up) - num)
+          return down
+      else
+          return up
+  }
+  return f(set.length * 0.5)
+}
+

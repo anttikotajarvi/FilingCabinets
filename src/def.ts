@@ -1,8 +1,7 @@
 import {
   GenericMutable,
   memoize,
-  DeepReadonly
-} from './generics';
+} from './util';
 import Ajv, {
   JTDDataType,
   JTDSchemaType,
@@ -33,16 +32,23 @@ export interface FolderDefinition<X>
 }
 export type FolderReference<BaseType> = {
   readonly name: string;
+  readonly cabinetName: string;
   readonly JTDSchema: JTDSchemaType<BaseType>;
   readonly file: (
     docData: BaseType
   ) => DocumentReference<BaseType>;
   readonly doc: (id: string) => DocumentReference<BaseType>;
+  /**
+   * @param {function}fn - Passes DocumentReference as argument, return true to break
+   */
+  readonly traverse: (
+    fn: (doc: DocumentReference<BaseType>) => boolean
+  ) => void;
 };
 export type DocumentReference<BaseType> = {
   readonly id: string;
   readonly exists: boolean;
-  readonly makeCopy: () => BaseType | null;
+  readonly makeCopy: () => BaseType;
   readonly delete: () => void;
   readonly update: (newData: BaseType) => void;
 };
@@ -50,7 +56,7 @@ export type DocumentReference<BaseType> = {
 // Binder
 export interface BinderDefinition
   extends ContainerDefinition<BinderFile> {
-  // eh
+    readonly read: (binderFile: BinderFile) => unknown
 }
 export type BinderReference = {
   readonly name: string;
@@ -62,7 +68,7 @@ export type BinderReference = {
 export type BinderFileReference = {
   readonly filename: string;
   readonly exists: boolean;
-  readonly makeCopy: () => BinderFile;
+  readonly makeCopy: () => unknown;
   readonly delete: () => void;
 };
 export type BinderFile = {

@@ -13,10 +13,7 @@ import Ajv, {
   JTDSchemaType,
   ValidateFunction
 } from 'ajv/dist/jtd';
-import { GenericMutable, memoize } from '../src/util';
-import { fstat, mkdirSync } from 'fs';
-import { stringify } from 'querystring';
-import { json } from 'stream/consumers';
+import { GenericMutable, memoize, findClosest } from '../src/util';
 
 type User = {
   name: string;
@@ -139,3 +136,25 @@ test('Use cabinet again', () => {
  
   expect(() => FilingCabinets.use(newMain)).toThrowError();
 })
+
+test('Binary search (util/findClosest)', () => {
+
+  const fs = require('fs');
+
+  const downF = "../.storage/main/users/1668350947776"
+  const upF = "../.storage/main/users/1668350947779"
+  fs.writeFileSync(downF, "null")
+  fs.writeFileSync(upF, "null")
+
+  const dir = fs.readdirSync("../.storage/main/users")
+
+  const search = 1668350947777;
+  const closest = findClosest(dir, search);
+
+  expect(dir[closest]).toBe("1668350947776")
+
+  fs.rmSync(downF);
+  fs.rmSync(upF);
+
+})
+

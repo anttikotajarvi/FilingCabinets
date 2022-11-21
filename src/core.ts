@@ -51,12 +51,13 @@ export const FilingCabinets = {
     // Add .internal binder
     const _cabinetDefinition = cabinetDefinition;
     _cabinetDefinition.definitions['.internal'] = {
-      predicates: [(x: BinderFile) => !!INTERNAL]
+      predicates: [(x: BinderFile) => !!INTERNAL],
+      read: (x: BinderFile) => x.buffer.toString(),
     } as BinderDefinition;
 
     const cabinetLock = anyToString(_cabinetDefinition);
     const cabinetReference = CreateCabinetReference(
-      _cabinetDefinition
+      _cabinetDefinition 
     );
     const internalBinder =
       cabinetReference.binder('.internal');
@@ -65,8 +66,7 @@ export const FilingCabinets = {
       // Check if a cabinet is already defined under the same name
       const currentCabinetLock = internalBinder
         .doc('cabinet-lock')
-        .makeCopy()
-        .buffer.toString();
+        .makeCopy() 
       if (currentCabinetLock !== cabinetLock)
         SHITBED('conflicting_definition', {
           _cabinetDefinition,
@@ -117,7 +117,7 @@ function CreateDocumentReference<BaseType>(
   return {
     id: documentID,
     exists: ext.exists(filepath),
-    makeCopy: (): BaseType | null => {
+    makeCopy: (): BaseType => {
       if (!ext.exists(filepath))
         SHITBED('doc_doesnt_exist', { filepath });
 
@@ -158,6 +158,7 @@ function CreateFolderReference<BaseType>(
 
   return {
     name: folderName,
+    cabinetName: cabinetDefinition.name,
     JTDSchema: folderDefinition.JTDSchema,
     file: (
       newData: BaseType
@@ -200,7 +201,11 @@ function CreateFolderReference<BaseType>(
         folderName,
         id
       );
-    }
+    },
+
+    traverse: (
+      fn: (doc: DocumentReference<BaseType>) => boolean
+    ) => {}
   };
 }
 
@@ -254,15 +259,15 @@ function CreateBinderFileReference(
     binderName,
     filename
   );
-
+  const definition = cabinetDefinition.definitions[binderName] as BinderDefinition;
   return {
     filename,
     exists: ext.exists(filepath),
     makeCopy: () => {
-      return {
+      return definition.read({
         filename,
         buffer: ext.readFile(filepath) as Buffer
-      };
+      });
     },
     delete: () => ext.rm(filepath)
   };
